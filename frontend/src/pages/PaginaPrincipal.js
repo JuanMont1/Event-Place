@@ -8,12 +8,10 @@ import '../styles/PaginaPrincipal.css';
 import CountUp from 'react-countup';
 import welcomeGif from '../archivos/img/abeja.gif';
 import L from 'leaflet';
-import { db } from '../config/firebase';
 import { BarraNavegacion } from '../Components/common/BarraNavegacion';
 import PieDePagina from '../Components/common/pieDePagina';
 import emailjs from 'emailjs-com';
 import soachaIconImg from '../archivos/img/Punto de marca.png';
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
 const Hero = () => {
@@ -163,12 +161,13 @@ const EventosDestacados = () => {
 
   const eventos = [
     {
-      titulo: 'Feria de Ciencias',
-      descripcion: 'Explora los &uacute;ltimos avances cient&iacute;ficos presentados por nuestros estudiantes.',
-      fecha: '15 de Mayo, 2023',
-      lugar: 'Campus Principal',
-      participantes: '500+',
-      imagen: 'https://th.bing.com/th/id/OIP.bxEmtJCnIVC-Kl1bpxSfsAHaHa?w=175&h=180&c=7&r=0&o=5&dpr=1.3&pid=1.7'
+      titulo: '',
+      descripcion: '',
+      fecha: '',
+      lugar: '',
+      participantes: '',
+      imagen: ''
+
     },
     {
       titulo: 'Concierto de Primavera',
@@ -381,22 +380,39 @@ const UltimosAnuncios = () => {
   };
 
   useEffect(() => {
-    const fetchAnuncios = async () => {
-      try {
-        const anunciosRef = collection(db, 'anuncios');
-        const q = query(anunciosRef, orderBy('fecha', 'desc'), limit(3));
-        const querySnapshot = await getDocs(q);
-        const anunciosData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setAnuncios(anunciosData);
-      } catch (error) {
-        console.error("Error al obtener anuncios:", error);
-      }
+    // Simula una llamada a un backend (por ejemplo, desde un archivo local JSON o un mock API)
+    const fetchAnunciosSimulado = async () => {
+      // Simulación del contenido que normalmente vendría de Firestore
+      const anunciosSimulados = [
+        {
+          id: '1',
+          titulo: 'Cambio de Horarios',
+          descripcion: 'Los horarios del segundo semestre han sido actualizados.',
+          tipo: 'calendario',
+          fecha: new Date().toISOString()
+        },
+        {
+          id: '2',
+          titulo: 'Voluntariado Ambiental',
+          descripcion: 'Únete a la jornada de reforestación este fin de semana.',
+          tipo: 'voluntarios',
+          fecha: new Date().toISOString()
+        },
+        {
+          id: '3',
+          titulo: 'Festival Cultural',
+          descripcion: 'Música, arte y gastronomía en el campus principal.',
+          tipo: 'evento',
+          fecha: new Date().toISOString()
+        }
+      ];
+
+      // Simular una espera como si fuera un fetch real
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setAnuncios(anunciosSimulados);
     };
 
-    fetchAnuncios();
+    fetchAnunciosSimulado();
   }, []);
 
   const getIcono = (tipo) => {
@@ -409,19 +425,8 @@ const UltimosAnuncios = () => {
   };
 
   const formatearFecha = (fecha) => {
-    if (fecha instanceof Date) {
-      return fecha.toLocaleDateString();
-    } else if (typeof fecha === 'object' && fecha.seconds) {
-      // Firestore Timestamp
-      return new Date(fecha.seconds * 1000).toLocaleDateString();
-    } else if (typeof fecha === 'string') {
-      // Intenta parsear la fecha si es una cadena
-      const parsedDate = new Date(fecha);
-      return isNaN(parsedDate.getTime()) ? fecha : parsedDate.toLocaleDateString();
-    } else if (typeof fecha === 'number') {
-      return new Date(fecha).toLocaleDateString();
-    }
-    return 'Fecha no disponible';
+    const parsedDate = new Date(fecha);
+    return isNaN(parsedDate.getTime()) ? 'Fecha inválida' : parsedDate.toLocaleDateString();
   };
 
   return (
@@ -445,6 +450,7 @@ const UltimosAnuncios = () => {
     </section>
   );
 };
+
 
 
 

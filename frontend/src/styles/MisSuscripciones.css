@@ -1,4 +1,3 @@
-
 .mis-suscripciones-container {
   background-color: #f8f9fa;
   padding: 3rem 0;
@@ -17,12 +16,12 @@
   overflow: hidden;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
-  height: 400px;
+  height: auto; 
   display: flex;
   flex-direction: column;
-  perspective: 1000px;
-  position: relative;
+  margin-bottom: 1.5rem;
 }
+
 
 .evento-card:hover {
   transform: translateY(-5px);
@@ -80,6 +79,7 @@
   height: 150px;
   object-fit: cover;
   border-bottom: 4px solid #4CAF50;
+  position: relative;
 }
 
 .evento-card .card-body {
@@ -89,6 +89,8 @@
   justify-content: center;
   align-items: center;
   flex-grow: 1;
+  position: relative;
+  z-index: 1;
 }
 
 .evento-card .card-title {
@@ -205,11 +207,7 @@
   transform: translateY(-2px);
 }
 
-@media (max-width: 576px) {
-  .evento-card .card-img-top {
-    height: 150px;
-  }
-}
+
 
 /* Estilos para el formulario de búsqueda */
 .search-form {
@@ -271,24 +269,7 @@
   height: auto;
 }
 
-@media (max-width: 767px) {
-  .bienvenida {
-    padding: 3rem 0;
-  }
-  
-  .bienvenida h1 {
-    font-size: 2rem;
-  }
 
-  .bienvenida .lead {
-    font-size: 1rem;
-  }
-
-  .imagen-container {
-    margin-top: 2rem;
-    height: 250px; 
-  }
-}
 
 .imagen-container {
   position: relative;
@@ -316,12 +297,7 @@
   transform: scale(1.05);
 }
 
-@media (max-width: 767px) {
-  .imagen-container {
-    margin-top: 2rem;
-    max-height: 300px;
-  }
-}
+
 
 .eventos-destacados {
   background-color: #f0f8ff; 
@@ -419,19 +395,7 @@
   background-color: #fff;
 }
 
-@media (max-width: 768px) {
-  .carrusel-item {
-    height: 400px;
-  }
 
-  .carrusel-caption h3 {
-    font-size: 1.7rem;
-  }
-
-  .carrusel-caption p {
-    font-size: 1rem;
-  }
-}
 
 .video-eventos {
   background-color: #f0f8ff;
@@ -517,25 +481,6 @@
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-@media (max-width: 991px) {
-  .video-eventos {
-    padding: 3rem 0;
-  }
-  
-  .video-eventos h2 {
-    font-size: 2rem;
-  }
-  
-  .video-info {
-    text-align: center;
-    margin-bottom: 2rem;
-  }
-  
-  .video-eventos ul {
-    display: inline-block;
-    text-align: left;
-  }
-}
 
 .app-container {
   display: flex;
@@ -645,6 +590,7 @@ main {
   height: 180px;
   object-fit: cover;
   border-bottom: 3px solid #4CAF50;
+  position: relative;
 }
 
 .evento-card .card-body {
@@ -734,8 +680,7 @@ main {
   padding-top: 0.75rem;
   width: 100%;
   position: relative;
-  display: flex
-;
+  display: flex;
   flex-direction: column;
   background-color: white;
   align-items: stretch;
@@ -773,3 +718,247 @@ main {
   box-shadow: 0 0 5px rgba(0,0,0,0.1);
 }
 
+.evento-card.agotado::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.sello-agotado {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  background-color: rgba(220, 53, 69, 0.9);
+  color: white;
+  padding: 10px 50px;
+  font-size: 24px;
+  font-weight: bold;
+  text-transform: uppercase;
+  z-index: 2;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  animation: aparecer-sello 0.5s ease-out;
+}
+
+@keyframes aparecer-sello {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-45deg) scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-45deg) scale(1);
+  }
+}
+
+.evento-card.agotado .card-img-top,
+.evento-card.agotado .card-body {
+  filter: blur(3px);
+}
+
+.evento-card.agotado:hover .card-img-top,
+.evento-card.agotado:hover .card-body {
+  filter: blur(0);
+}
+
+.evento-card.agotado .btn-suscribir {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ========== ESTILOS BASE (se mantienen igual) ========== */
+.mis-suscripciones-container {
+  background-color: #f8f9fa;
+  padding: 3rem 0;
+}
+
+/* ... [Todos tus estilos base existentes] ... */
+
+/* ========== MEDIA QUERIES PARA RESPONSIVE ========== */
+
+
+/* Dispositivos medianos (tablets, 768px y menos) */
+@media (max-width: 768px) {
+  .mis-suscripciones-container {
+    padding: 2rem 1rem;
+  }
+  
+  .mis-suscripciones-container h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .evento-card {
+    height: auto;
+    margin-bottom: 1.5rem;
+  }
+  
+  .evento-card .card-img-top {
+    height: 130px;
+  }
+  
+  .evento-card .card-title {
+    font-size: 1.1rem;
+  }
+  
+  .evento-card .evento-fecha,
+  .evento-card .evento-categoria {
+    font-size: 0.85rem;
+  }
+  
+  .bienvenida {
+    padding: 3rem 0;
+    padding-top: 150px;
+  }
+  
+  .bienvenida h1 {
+    font-size: 2rem;
+  }
+  
+  .bienvenida .lead {
+    font-size: 1.1rem;
+  }
+  
+  .imagen-container {
+    height: 250px;
+    margin-bottom: 1.5rem;
+  }
+  
+  .eventos-destacados,
+  .video-eventos {
+    padding: 2.5rem 0;
+  }
+  
+  .carrusel-item {
+    height: 350px;
+  }
+  
+  .carrusel-caption h3 {
+    font-size: 1.5rem;
+  }
+  
+  .video-container {
+    padding: 1rem;
+  }
+}
+
+/* Dispositivos pequeños (móviles grandes, 576px y menos) */
+@media (max-width: 576px) {
+  .evento-card {
+    max-width: 100%;
+  }
+  
+  .evento-card .card-img-top {
+    height: 120px;
+  }
+  
+  .evento-card .contador-suscripciones {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+  }
+  
+  .bienvenida {
+    padding-top: 120px;
+  }
+  
+  .bienvenida h1 {
+    font-size: 1.8rem;
+  }
+  
+  .bienvenida .lead {
+    font-size: 1rem;
+    margin: 1rem 0;
+  }
+  
+  .bienvenida-boton {
+    font-size: 1rem;
+    padding: 0.5rem 1.5rem;
+  }
+  
+  .imagen-container {
+    height: 200px;
+  }
+  
+  .categories-container {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .category-item {
+    flex: 0 0 auto;
+    width: 100px;
+    margin-right: 0.5rem;
+  }
+  
+  .carrusel-item {
+    height: 300px;
+  }
+  
+  .carrusel-caption {
+    padding: 1rem;
+  }
+  
+  .carrusel-caption h3 {
+    font-size: 1.3rem;
+  }
+  
+  .carrusel-caption p {
+    font-size: 0.9rem;
+  }
+}
+
+
+/* ========== AJUSTES ESPECÍFICOS PARA COMPORTAMIENTOS ========== */
+
+/* Desactivar efectos hover en móviles */
+@media (hover: none) {
+  .evento-card:hover {
+    transform: none;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  .btn-suscribir:hover,
+  .btn-cancelar:hover {
+    transform: none !important;
+  }
+  
+  .imagen-container:hover {
+    transform: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+}
+
+
+@supports (-webkit-touch-callout: none) {
+  .evento-card {
+    -webkit-backface-visibility: hidden;
+  }
+}
+
+/* Corrección para dispositivos con notch */
+@supports (padding-top: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Mejoras para pantallas con alta densidad de píxeles */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) { 
+  .evento-card .card-img-top {
+    border-width: 2px;
+  }
+  
+  .evento-card .btn-suscribir,
+  .evento-card .btn-cancelar {
+    border-width: 1.5px;
+  }
+}

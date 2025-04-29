@@ -1,11 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signInWithPopup } from "firebase/auth";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { auth, googleProvider, db, ADMIN_EMAILS } from '../../config/firebase'; 
 import udecLogo from '../../archivos/img/logoyu.png';
 import '../../styles/Login.css';
-import { useAuth } from '../../contexts/AuthContext';
 
 const Login = () => {
   const [fadeOut, setFadeOut] = useState(false);
@@ -13,8 +9,17 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const [emailHistory, setEmailHistory] = useState([]);
   const navigate = useNavigate();
-  const { login } = useAuth();
+
+  // Cargar historial de correos al montar el componente
+  useEffect(() => {
+    const savedEmails = JSON.parse(localStorage.getItem('emailHistory')) || [];
+    setEmailHistory(savedEmails);
+    
+    // Si hay correos guardados, poner el último usado como valor predeterminado
+    
+  }, []);
 
   const handleRegisterClick = () => {
     setFadeOut(true);
@@ -24,43 +29,13 @@ const Login = () => {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      console.log("Usuario logueado:", result.user);
-      
-      const userRef = doc(db, "users", result.user.uid);
-      const userSnap = await getDoc(userRef);
-      
-      let userData = {
-        name: result.user.displayName,
-        email: result.user.email,
-        photoURL: result.user.photoURL,
-        lastLogin: serverTimestamp(),
-      };
-
-      // Verifica si el email del usuario está en la lista de administradores
-      if (ADMIN_EMAILS.includes(result.user.email)) {
-        userData.role = 'admin';
-        console.log("Usuario asignado como admin:", result.user.email);
-      } else {
-        userData.role = 'user';
-        console.log("Usuario asignado como usuario normal:", result.user.email);
-      }
-
-      if (!userSnap.exists()) {
-        await setDoc(userRef, { ...userData, createdAt: serverTimestamp() });
-      } else {
-        await setDoc(userRef, userData, { merge: true });
-      }
-
-      // Redirigir basado en el rol del usuario
-      if (userData.role === 'admin') {
-        navigate('/admin');
-      } else {
+      console.log("Iniciando sesión con Google...");
+      setTimeout(() => {
         navigate('/MisSuscripciones');
-      }
+      }, 1000);
     } catch (error) {
       console.error("Error al iniciar sesión con Google:", error);
-      setError(error.message);
+      setError("Ocurrió un error al iniciar sesión con Google");
     } finally {
       setIsLoading(false);
     }
@@ -69,22 +44,36 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
+
     try {
-      await login(email, password);
-      const userRef = doc(db, "users", auth.currentUser.uid);
-      const userSnap = await getDoc(userRef);
-      if (userSnap.exists()) {
-        const userData = userSnap.data();
-        if (userData.role === 'admin') {
-          navigate('/admin');
-        } else {
-          navigate('/MisSuscripciones');
-        }
+      const response = await fetch(`https://back-eventplace.onrender.com/user/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const ApiRespuesta = await response.json();
+
+      if (response.ok) {
+        // Guardar token y actualizar historial de correos
+        localStorage.setItem('token', ApiRespuesta.data.token);
+        
+       
+        const updatedHistory = [
+          email,
+          ...emailHistory.filter(e => e !== email)
+        ].slice(0, 5); // Limitar a 5 correos recientes
+        
+        localStorage.setItem('emailHistory', JSON.stringify(updatedHistory));
+        setEmailHistory(updatedHistory);
+        
+        navigate('/perfil');
       } else {
-        navigate('/MisSuscripciones');
+        setError(ApiRespuesta.message || "Error al iniciar sesión");
       }
-    } catch (error) {
-      setError(error.message);
+    } catch (err) {
+      setError("No se pudo conectar al servidor");
     } finally {
       setIsLoading(false);
     }
@@ -101,12 +90,32 @@ const Login = () => {
 
         <form className="login-form" onSubmit={handleSubmit}>
           <label>Correo institucional</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="usuario@ucundinamarca.edu.co" required />
+          <input 
+            type="email" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+            placeholder="usuario@ucundinamarca.edu.co" 
+            required
+            list="emailHistory"
+          />
+          <datalist id="emailHistory">
+            {emailHistory.map((email, index) => (
+              <option key={index} value={email} />
+            ))}
+          </datalist>
 
           <label>Contraseña</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="********" required />
+          <input 
+            type="password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            placeholder="********" 
+            required 
+          />
 
-          <button type="submit" className="login-btn">Iniciar Sesión</button>
+          <button type="submit" className="login-btn">
+            {isLoading ? "Cargando..." : "Iniciar Sesión"}
+          </button>
           {error && <p className="error-message">{error}</p>}
         </form>
 
@@ -121,14 +130,21 @@ const Login = () => {
             "Cargando..."
           ) : (
             <>
-              <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="google-icon" />
+              <img 
+                src="https://www.svgrepo.com/show/475656/google-color.svg" 
+                alt="Google" 
+                className="google-icon" 
+              />
               Iniciar sesión con Google
             </>
           )}
         </button>
 
         <p className="register">
-          ¿No tienes cuenta? <button onClick={handleRegisterClick} style={{ cursor: 'pointer' }}>Regístrate</button>
+          ¿No tienes cuenta? 
+          <button onClick={handleRegisterClick} style={{ cursor: 'pointer' }}>
+            Regístrate
+          </button>
         </p>
       </div>
     </div>

@@ -1,196 +1,222 @@
-import { useEffect, useState } from "react";
-import { Navbar, Container, Nav, NavDropdown, Button } from "react-bootstrap";
-import logo from "../../archivos/img/logo.png";
-import { FaSearch, FaUserCircle, FaBars } from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Navbar, Container, Nav, NavDropdown, Button, Image } from "react-bootstrap";
+import { FaSearch, FaUserCircle, FaBars, FaTimes } from "react-icons/fa";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from '../context/AuthContext'; 
 import "../../styles/BarraNavegacion.css";
-import { auth, db } from "../../config/firebase";
-import { doc, getDoc } from "firebase/firestore";
-import { BarraNavegacionAdmin } from "../common/BarraNavegacionAdmin";
 
 export const BarraNavegacion = () => {
-  const [desplazado, setDesplazado] = useState(false);
-  const [busqueda, setBusqueda] = useState("");
-  const [usuarioActivo, setUsuarioActivo] = useState(null);
-  const [menuExpandido, setMenuExpandido] = useState(false);
-  const navegar = useNavigate();
+  const [scrolled, setScrolled] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const { user, logout, fetchUserData } = useAuth(); 
+  const location = useLocation(); 
 
   useEffect(() => {
-    const manejarScroll = () => {
-      setDesplazado(window.scrollY > 50);
+    const handleScroll = () => {
+      const isScrolled = window.scrollY > 10;
+      setScrolled(isScrolled);
     };
 
-    window.addEventListener("scroll", manejarScroll);
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
 
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-          const userData = userSnap.data();
-          console.log("Rol del usuario:", userData.role);
-          setUsuarioActivo({
-            name: user.displayName,
-            email: user.email,
-            role: userData.role || "user",
-          });
-        } else {
-          console.log(
-            "No se encontró documento de usuario, asignando rol 'user'"
-          );
-          setUsuarioActivo({
-            name: user.displayName,
-            email: user.email,
-            role: "user",
-          });
-        }
-      } else {
-        setUsuarioActivo(null);
-      }
-    });
+    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("resize", checkMobile);
+    
+    // Verificación inicial
+    checkMobile();
+    handleScroll();
 
     return () => {
-      window.removeEventListener("scroll", manejarScroll);
-      unsubscribe();
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", checkMobile);
     };
   }, []);
 
-  const manejarCambioBusqueda = (e) => {
-    setBusqueda(e.target.value);
-    console.log("Buscando:", e.target.value);
-  };
+  useEffect(() => {
+    fetchUserData();
+  }, [location, fetchUserData]); 
 
-  const irALogin = () => {
-    navegar("/login");
-  };
+  const toggleMenu = () => setExpanded(!expanded);
+  const toggleUserMenu = () => setShowUserMenu(!showUserMenu);
 
-  const irAPerfil = () => {
-    navegar("/perfil");
-  };
+  // Barra para móviles
+  if (isMobile) {
+    return (
+      <>
+        <div className={`mobile-navbar ${scrolled ? "scrolled" : ""}`}>
+          <button className="mobile-menu-btn" onClick={toggleMenu}>
+            {expanded ? <FaTimes /> : <FaBars />}
+          </button>
+          
+          <div className="mobile-search-center">
+            <FaSearch className="mobile-search-icon" />
+            <input
+              type="text"
+              className="mobile-search-input"
+              placeholder="Buscar eventos..."
+            />
+          </div>
+          
+          <div className="mobile-user-icon" onClick={toggleUserMenu}>
+            {user ? (
+              <Image 
+                src={user.profileImage || '/default-user.png'} 
+                roundedCircle 
+                width="30" 
+                height="30" 
+              />
+            ) : (
+              <FaUserCircle />
+            )}
+          </div>
+        </div>
 
-  const cerrarSesion = () => {
-    auth
-      .signOut()
-      .then(() => {
-        navegar("/");
-      })
-      .catch((error) => {
-        console.error("Error al cerrar sesión:", error);
-      });
-  };
+        <div className={`mobile-side-menu ${expanded ? "show" : ""}`}>
+          <Nav className="flex-column">
+            <Nav.Link as={Link} to="/" onClick={toggleMenu}>Inicio</Nav.Link>
+            <Nav.Link as={Link} to="/galeria-de-eventos" onClick={toggleMenu}>Galeria De Eventos</Nav.Link>
+            <Nav.Link as={Link} to="/calendario" onClick={toggleMenu}>Calendario</Nav.Link>
+            <Nav.Link as={Link} to="/MisSuscripciones" onClick={toggleMenu}>Mis Suscripciones</Nav.Link>
+            
+            <NavDropdown title="Foro" id="mobile-foro">
+              <NavDropdown.Item as={Link} to="/foro/eventos" onClick={toggleMenu}>
+                Foro de Eventos
+              </NavDropdown.Item>
+              <NavDropdown.Item as={Link} to="/foro/quejas-reclamos" onClick={toggleMenu}>
+                Quejas y Reclamos
+              </NavDropdown.Item>
+            </NavDropdown>
+            
+            <Nav.Link as={Link} to="/proximos-eventos" onClick={toggleMenu}>Próximos Eventos</Nav.Link>
+          </Nav>
+        </div>
 
+        {/* Menú de usuario móvil */}
+        <div className={`mobile-user-menu ${showUserMenu ? "show" : ""}`}>
+          <Nav className="flex-column">
+            {user ? (
+              <>
+                <div className="mobile-user-info">
+                  <Image 
+                    src={user.profileImage || '/default-user.png'} 
+                    roundedCircle 
+                    width="40" 
+                    height="40" 
+                    className="me-2"
+                  />
+                  <span>{user.name || user.email}</span>
+                </div>
+                <Nav.Link as={Link} to="/perfil" onClick={toggleUserMenu}>Mi perfil</Nav.Link>
+                <Nav.Link onClick={() => { logout(); toggleUserMenu(); }}>Cerrar sesión</Nav.Link>
+              </>
+            ) : (
+              <>
+                <Nav.Link as={Link} to="/login" onClick={toggleUserMenu}>Iniciar sesión</Nav.Link>
+                <Nav.Link as={Link} to="/registro" onClick={toggleUserMenu}>Registrarse</Nav.Link>
+              </>
+            )}
+          </Nav>
+        </div>
+
+        {/* Overlay */}
+        {(expanded || showUserMenu) && (
+          <div 
+            className="mobile-menu-overlay" 
+            onClick={() => {
+              if (expanded) toggleMenu();
+              if (showUserMenu) toggleUserMenu();
+            }}
+          ></div>
+        )}
+      </>
+    );
+  }
+
+  // Barra para computador
   return (
     <>
-      {usuarioActivo && usuarioActivo.role === "admin" ? (
-        <BarraNavegacionAdmin
-          usuarioActivo={usuarioActivo}
-          cerrarSesion={cerrarSesion}
-        />
-      ) : (
-        <>
-          <div
-            className={`fondo-barra ${desplazado ? "con-scroll" : ""}`}
-          ></div>
-          <Navbar
-            expand="lg"
-            className={`barra-personalizada ${desplazado ? "con-scroll" : ""}`}
-            expanded={menuExpandido}
-          >
-            <Container fluid className="px-4">
-              <Navbar.Brand as={Link} to="/MisSuscripciones" className="me-0">
-                <img
-                  src={logo}
-                  alt="Universidad de Cundinamarca"
-                  className={`logo-barra ${desplazado ? "con-scroll" : ""}`}
-                />
-              </Navbar.Brand>
-              <Navbar.Toggle
-                aria-controls="menu-navegacion"
-                onClick={() => setMenuExpandido(!menuExpandido)}
-              >
-                <FaBars />
-              </Navbar.Toggle>
-              <Navbar.Collapse
-                id="menu-navegacion"
-                className="justify-content-end"
-              >
-                <Nav className="alineacion-items">
-                  <Nav.Link as={Link} to="/">
-                    inicio
-                  </Nav.Link>
-                  <Nav.Link as={Link} to="/eventos">
-                    Galeria De Eventos
-                  </Nav.Link>
-                  <Nav.Link as={Link} to="/calendario">
-                    Calendario
-                  </Nav.Link>
-                  <Nav.Link as={Link} to="/MisSuscripciones">
-                    Mis Suscripciones
-                  </Nav.Link>
-                  <NavDropdown title="Foro" id="menu-foro">
-                    <NavDropdown.Item as={Link} to="/foro/eventos">
-                      Foro de Eventos
+      <Navbar
+        expand="lg"
+        fixed="top"
+        className={`barra-personalizada ${scrolled ? "con-scroll" : ""}`}
+      >
+        <Container fluid className="px-4">
+          <Navbar.Brand as={Link} to="/MisSuscripciones" className="me-0">
+            <img
+              src="/logo.png" // Ajusta esta ruta
+              alt="Universidad de Cundinamarca"
+              className={`logo-barra ${scrolled ? "con-scroll" : ""}`}
+            />
+          </Navbar.Brand>
+          
+          <div className="busqueda-seccion d-none d-lg-flex">
+            <FaSearch className="icono-busqueda" />
+            <input
+              type="text"
+              className="input-busqueda"
+              placeholder="Buscar eventos..."
+            />
+          </div>
+
+          <Navbar.Toggle aria-controls="navbar" className="d-lg-none" />
+          
+          <Navbar.Collapse id="navbar" className="justify-content-end">
+            <Nav className="alineacion-items">
+              <Nav.Link as={Link} to="/">Inicio</Nav.Link>
+              <Nav.Link as={Link} to="/galeria-de-eventos">Galeria De Eventos</Nav.Link>
+              <Nav.Link as={Link} to="/calendario">Calendario</Nav.Link>
+              <Nav.Link as={Link} to="/MisSuscripciones">Mis Suscripciones</Nav.Link>
+              
+              <NavDropdown title="Foro" id="menu-foro">
+                <NavDropdown.Item as={Link} to="/foro/eventos">
+                  Foro de Eventos
+                </NavDropdown.Item>
+                <NavDropdown.Item as={Link} to="/foro/quejas-reclamos">
+                  Quejas y Reclamos
+                </NavDropdown.Item>
+              </NavDropdown>
+              
+              <Nav.Link as={Link} to="/proximos-eventos">Próximos Eventos</Nav.Link>
+              
+              <div className="seccion-usuario">
+                {user ? (
+                  <NavDropdown
+                    title={
+                      <>
+                        <Image 
+                          src={user.profileImage || '/default-user.png'} 
+                          roundedCircle 
+                          width="30" 
+                          height="30" 
+                          className="me-2"
+                        />
+                        <span className="nombre-usuario">{user.name || user.email}</span>
+                      </>
+                    }
+                    id="menu-usuario"
+                    align="end"
+                  >
+                    <NavDropdown.Item as={Link} to="/perfil">
+                      Mi perfil
                     </NavDropdown.Item>
-                    <NavDropdown.Item as={Link} to="/foro/quejas-reclamos">
-                      Quejas y Reclamos
+                    <NavDropdown.Item onClick={logout}>
+                      Cerrar sesión
                     </NavDropdown.Item>
                   </NavDropdown>
-                  <Nav.Link as={Link} to="/proximos-eventos">
-                    Próximos Eventos
-                  </Nav.Link>
-                  <div className="busqueda-seccion d-none d-lg-flex ms-3">
-                    <FaSearch className="icono-busqueda" />
-                    <input
-                      type="text"
-                      className="input-busqueda"
-                      value={busqueda}
-                      onChange={manejarCambioBusqueda}
-                      placeholder="Buscar eventos..."
-                    />
-                  </div>
-                  <div className="seccion-usuario ms-3">
-                    {usuarioActivo ? (
-                      <>
-                        <NavDropdown
-                          title={
-                            <>
-                              <FaUserCircle className="icono-usuario" />
-                              <span className="nombre-usuario">
-                                {usuarioActivo.name}
-                              </span>
-                            </>
-                          }
-                          id="menu-usuario"
-                        >
-                          <NavDropdown.Item as={Link} to="/perfil">
-                            Ver Perfil
-                          </NavDropdown.Item>
-                          <NavDropdown.Item as={Link} to="/MisSuscripciones">
-                            Mis Suscripciones
-                          </NavDropdown.Item>
-                          <NavDropdown.Divider />
-                          <NavDropdown.Item onClick={cerrarSesion}>
-                            Cerrar Sesión
-                          </NavDropdown.Item>
-                        </NavDropdown>
-                      </>
-                    ) : (
-                      <>
-                        <Button
-                          onClick={irALogin}
-                          className="btn-iniciar-sesion btn-transparente me-2"
-                        >
-                          Iniciar sesión
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </Nav>
-              </Navbar.Collapse>
-            </Container>
-          </Navbar>
-        </>
-      )}
+                ) : (
+                  <Button as={Link} to="/login" variant="outline-primary" className="ms-2">
+                    Iniciar sesión
+                  </Button>
+                )}
+              </div>
+            </Nav>
+          </Navbar.Collapse>
+        </Container>
+      </Navbar>
     </>
   );
 };

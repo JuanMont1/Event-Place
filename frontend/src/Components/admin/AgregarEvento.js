@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import { Form, Button, Container, Row, Col } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { addDoc, collection } from "firebase/firestore";
-import { db } from '../../config/firebase';
-import { guardarEventoPasado } from '../../services/eventosService';
+
 
 const AgregarEvento = () => {
   const [evento, setEvento] = useState({
@@ -13,8 +11,9 @@ const AgregarEvento = () => {
     facultad: "",
     imagen: "",
     descripcion: "",
-    cuposDisponibles: 0, // Nuevo campo para cupos disponibles
+    cuposDisponibles: 0,
   });
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const { nombre, categoria, fecha, facultad, imagen, descripcion, cuposDisponibles } = evento;
@@ -29,29 +28,37 @@ const AgregarEvento = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setLoading(true);
+    
     try {
-      const eventoParaGuardar = {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Mock data for the new event
+      const mockEvent = {
         ...evento,
+        id: `mock-id-${Date.now()}`,
+        fechaCreacion: new Date().toISOString(),
         cuposDisponibles: parseInt(evento.cuposDisponibles, 10),
-        fechaCreacion: new Date(),
       };
 
-      const docRef = await addDoc(collection(db, "eventos"), eventoParaGuardar);
-      console.log("Evento agregado con ID: ", docRef.id);
+      console.log("Evento simulado agregado:", mockEvent);
       
-      // Guardar en eventos pasados
-      await guardarEventoPasado({...eventoParaGuardar, id: docRef.id});
+      // Simulate saving to past events
+      console.log("Evento simulado guardado en eventos pasados");
       
-      alert("Evento agregado con éxito");
+      alert("Evento agregado con éxito (simulación)");
       navigate("/admin/eventos");
     } catch (e) {
-      console.error("Error al agregar el evento: ", e);
-      alert("Error al agregar el evento. Por favor, inténtalo de nuevo.");
+      console.error("Error simulado al agregar el evento: ", e);
+      alert("Error simulado al agregar el evento. Por favor, inténtalo de nuevo.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ paddingBottom: "24px" }}>
+    <div className="agregar-evento-container" style={{ paddingBottom: "24px" }}>
       <Container>
         <h2 className="my-4">Agregar Nuevo Evento</h2>
         <Form onSubmit={handleSubmit}>
@@ -65,6 +72,7 @@ const AgregarEvento = () => {
                   value={nombre}
                   onChange={handleChange}
                   required
+                  disabled={loading}
                 />
               </Form.Group>
             </Col>
@@ -76,6 +84,7 @@ const AgregarEvento = () => {
                   value={categoria}
                   onChange={handleChange}
                   required
+                  disabled={loading}
                 >
                   <option value="">Seleccione una categoría</option>
                   <option value="Académico">Académico</option>
@@ -97,6 +106,7 @@ const AgregarEvento = () => {
                   value={fecha}
                   onChange={handleChange}
                   required
+                  disabled={loading}
                 />
               </Form.Group>
             </Col>
@@ -109,6 +119,7 @@ const AgregarEvento = () => {
                   value={facultad}
                   onChange={handleChange}
                   required
+                  disabled={loading}
                 />
               </Form.Group>
             </Col>
@@ -121,6 +132,7 @@ const AgregarEvento = () => {
               value={imagen}
               onChange={handleChange}
               placeholder="https://ejemplo.com/imagen.jpg"
+              disabled={loading}
             />
           </Form.Group>
           <Form.Group className="mb-3">
@@ -132,6 +144,7 @@ const AgregarEvento = () => {
               value={descripcion}
               onChange={handleChange}
               required
+              disabled={loading}
             />
           </Form.Group>
           <Form.Group className="mb-3">
@@ -143,10 +156,15 @@ const AgregarEvento = () => {
               onChange={handleChange}
               min="0"
               required
+              disabled={loading}
             />
           </Form.Group>
-          <Button variant="primary" type="submit">
-            Agregar Evento
+          <Button 
+            variant="primary" 
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? "Procesando..." : "Agregar Evento"}
           </Button>
         </Form>
       </Container>

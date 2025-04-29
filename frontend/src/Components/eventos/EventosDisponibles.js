@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Container,
   Row,
@@ -18,12 +18,12 @@ import {
   FaCalendarAlt,
   FaSearch,
   FaTicketAlt,
+  FaMapMarkerAlt,
+  FaInfoCircle,
 } from "react-icons/fa";
-import { db } from "../../config/firebase";
-import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 import "../../styles/MisSuscripciones.css";
-import { logros } from "../users/logros";
 
+// Datos de ejemplo para categorías
 const categories = [
   { id: 1, name: "Académico", icon: <FaGraduationCap />, color: "#4285F4" },
   { id: 2, name: "Cultural", icon: <FaMusic />, color: "#EA4335" },
@@ -32,96 +32,97 @@ const categories = [
   { id: 5, name: "Tecnológico", icon: <FaCode />, color: "#FF6D01" },
 ];
 
-const EventosDisponibles = ({
-  eventosFiltrados,
-  categoriaSeleccionada,
-  setCategoriaSeleccionada,
-  filtro,
-  setFiltro,
-  isSuscrito,
-  toggleSuscripcion,
-  contadorEventos,
-  eventosDisponibles,
-  setEventosDisponibles,
-  currentUser,
-}) => {
-  const [animatingEventId, setAnimatingEventId] = useState(null);
+// Datos de ejemplo para eventos
+const eventosEjemplo = [
+  {
+    id: "1",
+    name: "Conferencia de React",
+    category: "Tecnológico",
+    image: "https://mott.pe/noticias/wp-content/uploads/2018/09/6-tips-para-aprender-a-como-tomar-fotos-en-eventos-de-dia-y-noche.png",
+    place: "Auditorio Principal",
+    date: new Date("2023-10-15"),
+    time: "14:00",
+    director: "60d5ecb8b176f71d8892d47e", 
+    description: "Aprende React con expertos en desarrollo web",
+    status: "Por realizar",
+    capacity: "100",
+    contadorSuscripciones: 42,
+    cuposDisponibles: 10,
+  },
+  {
+    id: "2",
+    name: "Concierto de Jazz",
+    category: "Cultural",
+    image: "https://mott.pe/noticias/wp-content/uploads/2018/09/6-tips-para-aprender-a-como-tomar-fotos-en-eventos-de-dia-y-noche.png",
+    place: "Teatro Universitario",
+    date: new Date("2023-10-20"),
+    time: "20:00",
+    director: "60d5ecb8b176f71d8892d47f", 
+    description: "Disfruta de una noche de jazz con artistas locales e internacionales",
+    status: "Por realizar",
+    capacity: "200",
+    contadorSuscripciones: 35,
+    cuposDisponibles: 5,
+  },
+  {
+    id: "3",
+    name: "Torneo de Fútbol",
+    category: "Deportivo",
+    image: "https://mott.pe/noticias/wp-content/uploads/2018/09/6-tips-para-aprender-a-como-tomar-fotos-en-eventos-de-dia-y-noche.png",
+    place: "Estadio Universitario",
+    date: new Date("2023-10-25"),
+    time: "09:00",
+    director: "60d5ecb8b176f71d8892d480", 
+    description: "Competición interuniversitaria de fútbol",
+    status: "Por realizar",
+    capacity: "500",
+    contadorSuscripciones: 28,
+    cuposDisponibles: 0,
+  },
+];
+
+const EventosDisponibles = () => {
+  // Estados para el frontend
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
+  const [filtro, setFiltro] = useState("");
   const [suscripciones, setSuscripciones] = useState([]);
+  const [animatingEventId, setAnimatingEventId] = useState(null);
 
-  const eventosToShow = useMemo(() => {
-    return eventosDisponibles.filter(
-      (e) =>
-        (!categoriaSeleccionada || e.categoria === categoriaSeleccionada) &&
-        (!filtro || e.nombre.toLowerCase().includes(filtro.toLowerCase()))
+  // Filtrar eventos
+  const eventosFiltrados = useMemo(() => {
+    return eventosEjemplo.filter(
+      (evento) =>
+        (!categoriaSeleccionada || evento.category === categoriaSeleccionada) &&
+        (!filtro || evento.name.toLowerCase().includes(filtro.toLowerCase()))
     );
-  }, [eventosDisponibles, categoriaSeleccionada, filtro]);
+  }, [categoriaSeleccionada, filtro]);
 
-  const actualizarSuscripciones = useCallback(() => {
-    setSuscripciones((prevSuscripciones) =>
-      prevSuscripciones.map((suscripcion) => {
-        const eventoActualizado = eventosDisponibles.find(
-          (e) => e.id === suscripcion.id
-        );
-        return eventoActualizado || suscripcion;
-      })
-    );
-  }, [eventosDisponibles]);
+  // Verificar si un evento está suscrito
+  const isSuscrito = (eventoId) => {
+    return suscripciones.some((e) => e.id === eventoId);
+  };
 
-  const checkLogros = useCallback(async () => {
-    if (!currentUser) return;
-
-    const userRef = doc(db, "users", currentUser.uid);
-    const logrosObtenidos = [];
-
-    for (const logro of logros) {
-      if (logro.condicion(suscripciones)) {
-        logrosObtenidos.push(logro.id);
+  // Manejar suscripción (simulado)
+  const handleToggleSuscripcion = (evento) => {
+    if (isSuscrito(evento.id)) {
+      setSuscripciones(suscripciones.filter((e) => e.id !== evento.id));
+    } else {
+      if (evento.cuposDisponibles > 0) {
+        setSuscripciones([...suscripciones, evento]);
+        setAnimatingEventId(evento.id);
+        setTimeout(() => setAnimatingEventId(null), 1000);
       }
-    }
-
-    if (logrosObtenidos.length > 0) {
-      try {
-        await updateDoc(userRef, {
-          logros: arrayUnion(...logrosObtenidos),
-        });
-        console.log("Nuevos logros obtenidos:", logrosObtenidos);
-      } catch (error) {
-        console.error("Error al actualizar logros:", error);
-      }
-    }
-  }, [currentUser, suscripciones]);
-
-  useEffect(() => {
-    actualizarSuscripciones();
-  }, [actualizarSuscripciones]);
-
-  useEffect(() => {
-    checkLogros();
-  }, [checkLogros]);
-
-  const handleToggleSuscripcion = async (evento) => {
-    await toggleSuscripcion(evento);
-
-    setSuscripciones((prevSuscripciones) => {
-      if (isSuscrito(evento.id)) {
-        return prevSuscripciones.filter((e) => e.id !== evento.id);
-      } else {
-        return [...prevSuscripciones, evento];
-      }
-    });
-
-    if (!isSuscrito(evento.id)) {
-      setAnimatingEventId(evento.id);
-      setTimeout(() => setAnimatingEventId(null), 1000);
     }
   };
 
   return (
-    <section className="eventos-disponibles py-5">
+    <section className="eventos-disponibles py-3 py-md-5">
       <Container>
         <h2 className="text-center mb-4">Eventos Disponibles</h2>
+        
+        {/* Buscador */}
         <Row className="mb-4">
-          <Col md={6} className="mx-auto">
+          <Col xs={12} md={6} className="mx-auto">
             <Form className="search-form">
               <div className="input-group">
                 <Form.Control
@@ -139,6 +140,8 @@ const EventosDisponibles = ({
             </Form>
           </Col>
         </Row>
+
+        {/* Categorías */}
         <div className="categories-container mb-4">
           {categories.map((category) => (
             <div
@@ -158,37 +161,51 @@ const EventosDisponibles = ({
             </div>
           ))}
         </div>
+
+        {/* Lista de eventos */}
         <Row>
-          {eventosToShow.map((evento) => (
-            <Col key={evento.id} lg={4} md={6} className="mb-4">
-              <Card className="evento-card h-100 border-success">
-                <Card.Img variant="top" src={evento.imagen} />
+          {eventosFiltrados.map((evento) => (
+            <Col key={evento.id} xs={12} sm={6} lg={4} className="mb-4">
+              <Card className={`evento-card h-100 border-success ${evento.cuposDisponibles <= 0 ? 'agotado' : ''}`}>
+                <div className="position-relative">
+                  <Card.Img variant="top" src={evento.image} />
+                  <div className="contador-suscripciones">
+                    <FaUsers className="text-white me-1" />
+                    <strong>{evento.contadorSuscripciones || 0}</strong>
+                  </div>
+                  {evento.cuposDisponibles <= 0 && (
+                    <div className="sello-agotado">
+                      <span>Cupos llenos</span>
+                    </div>
+                  )}
+                </div>
                 <Card.Body className="d-flex flex-column">
                   <Card.Title className="text-success">
-                    {evento.nombre}
+                    {evento.name}
                   </Card.Title>
                   <Card.Text className="flex-grow-1">
-                    {evento.descripcion}
+                    {evento.description}
                   </Card.Text>
                   <div className="evento-detalles mt-3">
                     <p className="evento-fecha mb-1">
                       <FaCalendarAlt className="text-success me-2" />{" "}
-                      {evento.fecha}
+                      {evento.date.toLocaleDateString()} - {evento.time}
                     </p>
                     <p className="evento-categoria mb-1">
                       <FaCode className="text-success me-2" />{" "}
-                      {evento.categoria}
+                      {evento.category}
                     </p>
-                    <p className="contador-suscripciones mb-1">
-                      <FaUsers className="text-success me-2" />
-                      <strong>{evento.contadorSuscripciones || 0}</strong>{" "}
-                      suscripciones
+                    <p className="evento-lugar mb-1">
+                      <FaMapMarkerAlt className="text-success me-2" />{" "}
+                      {evento.place}
                     </p>
-
                     <p className="cupos-disponibles mb-1">
                       <FaTicketAlt className="text-success me-2" />
-                      <strong>{evento.cuposDisponibles}</strong> cupos
-                      disponibles
+                      <strong>{evento.cuposDisponibles}</strong> cupos disponibles
+                    </p>
+                    <p className="evento-status mb-1">
+                      <FaInfoCircle className="text-success me-2" />{" "}
+                      Estado: {evento.status}
                     </p>
                   </div>
                   <div className="button-container mt-3">

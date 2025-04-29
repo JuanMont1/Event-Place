@@ -28,7 +28,7 @@ export const logros = [
     icono: '🌈',
     condicion: (suscripciones) => {
       const categorias = new Set(suscripciones.map(s => s.categoria));
-      return categorias.size >= 5; // Asumiendo que hay 5 categorías
+      return categorias.size >= 5; 
     }
   }
 ];
