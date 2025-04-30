@@ -12,7 +12,7 @@ const ForoEventos = () => {
   const [selectedPost, setSelectedPost] = useState(null);
   const [newComment, setNewComment] = useState('');
   const [editingPost, setEditingPost] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [setLoading] = useState(true);
 
   // Simulación de autenticación
   useEffect(() => {
